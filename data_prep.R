@@ -43,3 +43,12 @@ sqf_df <- sqf_df %>%
           group_by(YEAR2, STOP_LOCATION_PRECINCT) %>%
           summarise(STOPS = n(), STOP_ARRESTS = sum(SUSPECT_ARRESTED_FLAG))
 write.csv(sqf_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/sqf_df.csv', row.names=FALSE)
+
+rm(list = ls())
+library(dplyr)
+population_df <- read_csv('/Users/flatironschol/FIS-Projects/Module4/data/NYC_Blocks_2010CensusData_Plus_Precincts.csv')
+population_df <- population_df %>%
+                 select(precinct, P0010001) %>%
+                 group_by(precinct) %>%
+                 summarise(POPULATION = sum(P0010001))
+write.csv(population_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/population_df.csv', row.names=FALSE)
