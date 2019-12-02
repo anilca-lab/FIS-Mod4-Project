@@ -29,12 +29,29 @@ write.csv(arrests_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-P
 
 rm(list = ls())
 library(dplyr)
-sqf_df <- read_csv('/Users/flatironschol/FIS-Projects/Module4/data/sqf_df.csv')
+library(readxl)
+sqf_df = data.frame()
+for (year in 2008:2018) {
+  if (year <= 2014) {
+    filename <- paste0('/Users/flatironschol/FIS-Projects/Module4/data/',year,'.csv',collapse='')
+    df <- read_csv(filename)
+    df <- df %>% mutate_if(is.numeric,as.character) %>% mutate_if(is.logical,as.character)
+  } else if (year <= 2016) {
+    filename <- paste0('/Users/flatironschol/FIS-Projects/Module4/data/sqf-',year,'.csv',collapse='')
+    df <- read_csv(filename)
+    df <- df %>% mutate_if(is.numeric,as.character) %>% mutate_if(is.logical,as.character)
+  } else {
+    filename <- paste0('/Users/flatironschol/FIS-Projects/Module4/data/sqf-',year,'.xlsx',collapse='')
+    df <- read_excel(filename)
+    df <- df %>% mutate_if(is.numeric,as.character) %>% mutate_if(is.logical,as.character)
+  }
+  sqf_df <- bind_rows(sqf_df, df)
+}
 sqf_df <- sqf_df %>% 
-          mutate(STOP_FRISK_ID = ifelse(is.na(STOP_FRISK_ID), ser_num, STOP_FRISK_ID), 
-                 YEAR2 = ifelse(is.na(YEAR2), year, YEAR2), 
+          mutate(STOP_FRISK_ID = ifelse(is.na(STOP_FRISK_ID), as.numeric(ser_num), as.numeric(STOP_FRISK_ID)), 
+                 YEAR2 = ifelse(is.na(YEAR2), as.numeric(year), as.numeric(YEAR2)), 
                  SUSPECT_ARRESTED_FLAG = ifelse(is.na(SUSPECT_ARRESTED_FLAG), arstmade, SUSPECT_ARRESTED_FLAG), 
-                 STOP_LOCATION_PRECINCT = ifelse(is.na(STOP_LOCATION_PRECINCT), pct, SUSPECT_ARRESTED_FLAG)) %>% 
+                 STOP_LOCATION_PRECINCT = ifelse(is.na(STOP_LOCATION_PRECINCT), as.numeric(pct), as.numeric(STOP_LOCATION_PRECINCT))) %>% 
           select(STOP_FRISK_ID, YEAR2, STOP_LOCATION_PRECINCT, SUSPECT_ARRESTED_FLAG)
 sqf_df <- sqf_df %>% 
           mutate(SUSPECT_ARRESTED_FLAG = recode(SUSPECT_ARRESTED_FLAG,
