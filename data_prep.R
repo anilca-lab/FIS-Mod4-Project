@@ -17,8 +17,15 @@ rm(list = ls())
 library(dplyr)
 library(stringr)
 arrests_df <- read_csv('/Users/flatironschol/FIS-Projects/Module4/data/NYPD_Arrests_Data__Historic_.csv')
-arrests_df <- arrests_df %>% mutate(YEAR = as.numeric(str_sub(ARREST_DATE,-4,-1)), MONTH = as.numeric(str_sub(ARREST_DATE,-7,-6))) %>% select(ARREST_KEY, YEAR, MONTH, KY_CD, ARREST_PRECINCT, AGE_GROUP:PERP_RACE)
-write.csv(arrests_df, file='/Users/flatironschol/FIS-Projects/Module4/data/arrests_df.csv', row.names=FALSE)
+arrests_df <- arrests_df %>% 
+              mutate(YEAR = as.numeric(str_sub(ARREST_DATE,-4,-1)), 
+                     MONTH = as.numeric(str_sub(ARREST_DATE,-7,-6))) %>% 
+              select(ARREST_KEY, YEAR, MONTH, KY_CD, ARREST_PRECINCT, AGE_GROUP:PERP_RACE)
+write.csv(arrests_df, file='/Users/flatironschol/FIS-Projects/Module4/data/arrests_df_ind.csv', row.names=FALSE)
+arrests_df <- arrests_df %>%
+              group_by(YEAR, ARREST_PRECINCT) %>%
+              summarise(ARRESTS = n())
+write.csv(arrests_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/arrests_df.csv', row.names=FALSE)
 
 rm(list = ls())
 library(dplyr)
