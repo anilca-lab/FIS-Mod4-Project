@@ -31,11 +31,11 @@ rm(list = ls())
 library(dplyr)
 library(readxl)
 sqf_df = data.frame()
-for (year in 2008:2018) {
+for (year in 2016:2018) {
   if (year <= 2014) {
     filename <- paste0('/Users/flatironschol/FIS-Projects/Module4/data/',year,'.csv',collapse='')
     df <- read_csv(filename)
-    df <- df %>% mutate_if(is.numeric,as.character) %>% mutate_if(is.logical,as.character)
+    df <- df %>% mutate_if(is.numeric,as.character) %>% mutate_if(is.logical,as.character) %>% mutate(datestop = as.character(datestop), dob = as.character(dob))
   } else if (year <= 2016) {
     filename <- paste0('/Users/flatironschol/FIS-Projects/Module4/data/sqf-',year,'.csv',collapse='')
     df <- read_csv(filename)
@@ -59,7 +59,7 @@ sqf_df <- sqf_df %>%
                                                 "Y" = 1)) %>%
           group_by(YEAR2, STOP_LOCATION_PRECINCT) %>%
           summarise(STOPS = n(), STOP_ARRESTS = sum(SUSPECT_ARRESTED_FLAG))
-write.csv(sqf_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/sqf_df.csv', row.names=FALSE)
+write.csv(sqf_df, file='/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/sqf_df_1.csv', row.names=FALSE)
 
 rm(list = ls())
 library(dplyr)
