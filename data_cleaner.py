@@ -264,7 +264,8 @@ def load_sqf(dirname, year):
     # 999 is a na_value for the precinct variable
     data.pct = data.pct.replace({999: np.nan})
     # convert arrests made column from Y-N to 1-0
-    data.arstmade = y_n_to_1_0(data.arstmade)
+    for y_n_col in ('arstmade', 'pistol', 'riflshot', 'wepfound'):
+        data[y_n_col] = y_n_to_1_0(data[y_n_col])
     return data
 
 def load_sqfs(dirname, start=2003, end=2008):
