@@ -8,7 +8,7 @@ import numpy as np
 
 
 NA_VALUES = [' ', '12311900', '*', '**']
-
+Y_N_COLS = ('arstmade', 'pistol', 'machgun', 'asltweap', 'riflshot', 'knifcuti', 'othrweap', 'wepfound')
 """
 COL_RENAME = {'STOP_FRISK_ID',
  'STOP_FRISK_DATE' : 'datestop',
@@ -223,7 +223,15 @@ def format_time(t_str):
 
 def y_n_to_1_0(col, yes_value='Y'):
     """convert Y/N column to 1/0 column"""
-    return pd.Series(np.where(col.values == yes_value, 1, 0), col.index)
+    out_col = pd.Series(np.where(col.isin(yes_value, '1'), 1, 0), col.index)
+    out_col[col.isna()] = np.NaN
+    return out_col
+
+def y_n_to_1_0_cols(data, cols=Y_N_COLS, yes_value='Y'):
+    """convert Y/N columns to 1/0 columns"""
+    for y_n_col in Y_N_COLS:
+        if y_n_col in data:
+            data[y_n_col] = y_n_to_1_0(data[y_n_col])
 
 def load_sqf(dirname, year):
     """Load and clean sqf csv file by year."""
@@ -263,9 +271,8 @@ def load_sqf(dirname, year):
     data = data.drop(columns=['detail1_', 'linecm', 'post', 'dettypecm'], errors='ignore')
     # 999 is a na_value for the precinct variable
     data.pct = data.pct.replace({999: np.nan})
-    # convert arrests made column from Y-N to 1-0
-    for y_n_col in ('arstmade', 'pistol', 'riflshot', 'wepfound'):
-        data[y_n_col] = y_n_to_1_0(data[y_n_col])
+    # convert yes-no columns to 1-0
+    y_n_to_1_0_cols(data)
     return data
 
 def load_sqfs(dirname, start=2003, end=2008):
