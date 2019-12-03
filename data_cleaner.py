@@ -23,14 +23,20 @@ def format_time(t_str):
 def load_sqf(dirname, year):
     """Load and clean sqf csv file by year."""
     print(f'Loading {year}...')
+    # '*' is a na_value for the beat variable
+    # '12311900' is a na_value for DOB
     data = pd.read_csv(f'{dirname}/{year}.csv',
                        encoding='cp437',
-                       na_values=[' ', '12311900'],
+                       na_values=[' ', '12311900', '*', '**'],
                        dtype={'repcmd' : str,
                               'revcmd' : str,
                               'stname' : str,
                               'datestop' : str,
                               'timestop' : str,
+                              'sumoffen' : str,
+                              'addrnum' : str,
+                              'othfeatr' : str,
+                              'recstat' : str,
                               'pct' : 'Int64',
                               'city' : 'category',
                               'sector' : 'category',
@@ -54,11 +60,11 @@ def load_sqf(dirname, year):
     data.pct = data.pct.replace({999: np.nan})
     return data
 
-def load_sqf_03_to_08(dirname):
+def load_sqfs(dirname, start=2003, end=2008):
     """Loads sqf data in format dir/<year>.csv into dict of dataframes
-    where year in 2003 to 2008"""
+    Currently works for years in 2003 to 2011"""
     stop_frisks = {}
-    for year in range(2003, 2009):
+    for year in range(start, end + 1):
         stop_frisks[year] = load_sqf(dirname, year)
     print("Done.")
     return stop_frisks
@@ -70,6 +76,11 @@ def add_datetimestop(data):
                                           format='%m%d%Y%H:%M',
                                           errors='coerce')
     return data
+
+def add_datetimestops(data_dict):
+    """update the dataframes in a data_dict with datetimestop field"""
+    for year in data_dict:
+        data_dict[year] = add_datetimestop(data_dict[year])
 
 def load_filespecs(dirname, start=2003, end=2017):
     """Loads filespecs from files named '<year> SQF File Spec.xlsx'
