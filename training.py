@@ -14,6 +14,9 @@ from sklearn.model_selection import train_test_split
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set_context("talk")
+sns.set_style("white")
 df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/df.csv')
 df = df.dropna()
 df = df.drop(df.loc[(df.YEAR < 2008) | (df.YEAR == 2013)].index)
@@ -68,13 +71,16 @@ rslt = lr.fit()
 rslt.summary()
 # For model 4 calculate residuals
 res = y_train[:,1]-rslt.predict(sm.add_constant(X_train[:,3]))
-ax1 = sns.scatterplot(x = X_train[:,4], y = res, hue = X_train[:,6])
+fig, ax1 = plt.subplots(1, 1, figsize = (10, 6))
+sns.scatterplot(x = X_train[:,4], y = res, hue = X_train[:,6], ax = ax1)
 ax1.set_ylim(-75,75)
 ax1.set_xlim(0,350)
 ax1.set_xlabel('Stops per 1,000 population')
 ax1.set_ylabel('Reported offenses per 1,000 population\nafter controlling for arrest rate')
-ax1.set_title('The Relationship Bewteen Stop Rate and Crime Rate is Less Obvious')
-ax1.legend()
+ax1.set_title('The Relationship Between Stop Rate and Crime Rate is Less Obvious')
+leg = ax1.get_legend()
+for t, l in zip(leg.texts, ['before 2013','after 2013']): t.set_text(l)
+plt.legend()
 # Model 5: rates - stop rate with nonstop arrests
 lr = sm.OLS(y_train[:,1], sm.add_constant(X_train[:,3:5]), hasconst=True)
 rslt = lr.fit()
