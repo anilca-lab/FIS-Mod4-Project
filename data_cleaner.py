@@ -275,9 +275,9 @@ def load_sqf(dirname, year):
     y_n_to_1_0_cols(data)
     return data
 
-def load_sqfs(dirname, start=2003, end=2008):
+def load_sqfs(dirname, start=2003, end=2016):
     """Loads sqf data in format dir/<year>.csv into dict of dataframes
-    Currently works for years in 2003 to 2011"""
+    Currently works for years in 2003 to 2016"""
     stop_frisks = {}
     for year in range(start, end + 1):
         stop_frisks[year] = load_sqf(dirname, year)
