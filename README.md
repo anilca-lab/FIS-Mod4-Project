@@ -38,4 +38,3 @@ Summary of files:
  - test.py: Code for model testing
  - Stop-question-frisk.pdf: PDF of powerpoint presentation
  - Powerpoint file: https://docs.google.com/presentation/d/1qCCb5k9CuM3CH0Y8Wq6eowyCYQgKv3oVReTsgcaw0Ok/edit#slide=id.gc6f75fceb_0_0
-This study uses the following data:
