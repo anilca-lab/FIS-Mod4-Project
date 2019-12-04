@@ -10,13 +10,14 @@ annually and at the precinct level.
 """
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import OneHotEncoder
 from sklearn.model_selection import train_test_split
+from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 import seaborn as sns
 df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/df.csv')
 df = df.dropna()
 df = df.drop(df.loc[(df.YEAR < 2008) | (df.YEAR == 2013)].index)
+df = df[~df.ADDR_PCT_CD.isin([22, 14])]
 df['policy_change'] = [1 if year > 2013 else 0 for year in df.YEAR ]
 df['crime_rate'] = 1000 * df.CMPLNTS / df.POPULATION
 df['nonsqf_arrests'] = df.ARRESTS - df.STOP_ARRESTS
@@ -41,7 +42,7 @@ ax1.set_ylabel('Reported offenses per 1,000 population')
 ax1.set_title('Crime and Arrest Rates are Highly Correlated across Time and across Precints')
 # Construct X and y matrices for model fitting
 feats = ['POPULATION', 'ARRESTS', 'nonsqf_arrests', 'nonsqf_arrest_rate',\
-         'stop_rate','YEAR','policy_change', 'ADDR_PCT_CD']
+         'stop_rate','YEAR','policy_change', 'sqf_arrest_rate', 'ADDR_PCT_CD']
 X = df[feats].values
 y = df[['CMPLNTS','crime_rate']].values
 # Split the data into test and training samples--stratify by year
@@ -82,24 +83,62 @@ rslt.summary()
 lr = sm.OLS(y_train[:,1], sm.add_constant(X_train[:,3:6]), hasconst=True)
 rslt = lr.fit()
 rslt.summary()
-# Model 6: rates - stop rate with nonstop arrests and policy change - poly features
-from sklearn.preprocessing import PolynomialFeatures
-poly = PolynomialFeatures(degree=2)
-lr = sm.OLS(y_train[:,1], poly.fit_transform(X_train[:,3:7]), hasconst=True)
+# Model 7: rates - stop rate with nonstop arrests and policy change - t omitted
+x = np.concatenate((X_train[:,3:5], X_train[:,6].reshape(-1,1)), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
 rslt = lr.fit()
 rslt.summary()
-# Test model 6 for collinearity
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-X_train_poly = poly.fit_transform(X_train[:,3:7]) 
-vif = [variance_inflation_factor(X_train_poly, i) for i in range(1,X_train_poly.shape[1])]
-#list(zip(refined_cols, vif))
-#sns.pairplot(X_train_poly)
-# Model 7: rates - stop rate with nonstop arrests and policy change
+# Model 8: rates - stop rate with nonstop arrests and policy change interaction
 interaction = X_train[:,4]*X_train[:,6]
-lr = sm.OLS(y_train[:,1], np.concatenate((X_train[:,3:7],interaction.reshape(-1,1)), axis = 1), hasconst=True)
+x = np.concatenate((x, interaction.reshape(-1,1)), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
 rslt = lr.fit()
 rslt.summary()
-# Test model 7 for collinearity
-
-vif = [variance_inflation_factor(np.concatenate((X_train[:,3:7],interaction.reshape(-1,1)), axis = 1), i) \
-                                 for i in range(np.concatenate((X_train[:,3:7],interaction.reshape(-1,1)), axis = 1).shape[1])]
+# Test model 8 for multicollinearity
+feats8 = feats[3:5] + [feats[6]] + ['stops_policy_inter'] 
+vif = [variance_inflation_factor(x, i) for i in range(x.shape[1])]
+list(zip(feats8, vif))
+# Model 9: rates - stop rate with nonstop arrests, policy change interaction, stop arrests
+x = np.concatenate((X_train[:,3:5], X_train[:,6:8]), axis = 1)
+interaction1 = X_train[:,4]*X_train[:,6]
+interaction2 = X_train[:,7]*X_train[:,6]
+interaction = np.concatenate((interaction1.reshape(-1,1), interaction2.reshape(-1,1)), axis =1)
+x = np.concatenate((x, interaction), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
+rslt = lr.fit()
+rslt.summary()
+# Test model 9 for multicollinearity
+feats9 = feats[3:5] + feats[6:8] + ['stops_policy_inter', 'sqf_arrests_policy_inter'] 
+vif = [variance_inflation_factor(x, i) for i in range(x.shape[1])]
+list(zip(feats9, vif))
+# Model 10: rates - stop rate with nonstop arrests, policy change interaction, 
+# stop arrests and population
+x = np.concatenate((x, X_train[:,0].reshape(-1,1)), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
+rslt = lr.fit()
+rslt.summary()
+# Model 11: rates - sqf arrest rate with nonstop arrests, policy change interaction
+x = np.concatenate((X_train[:,3].reshape(-1,1), X_train[:,6:8]), axis = 1)
+interaction = X_train[:,6]*X_train[:,7]
+x = np.concatenate((x, interaction.reshape(-1,1)), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
+rslt = lr.fit()
+rslt.summary()
+# Test model 11 for multicollinearity
+feats11 = [feats[3]] + feats[6:8] + ['sqf_arrests_policy_inter'] 
+vif = [variance_inflation_factor(x, i) for i in range(x.shape[1])]
+list(zip(feats11, vif))
+# Model 12: rates - stop rate with population and policy change interaction
+x = np.concatenate((X_train[:,0].reshape(-1,1), X_train[:,4].reshape(-1,1)), axis = 1)
+x = np.concatenate((x, X_train[:,6:8]), axis = 1)
+interaction1 = X_train[:,4]*X_train[:,6]
+interaction2 = X_train[:,7]*X_train[:,6]
+interaction = np.concatenate((interaction1.reshape(-1,1), interaction2.reshape(-1,1)), axis =1)
+x = np.concatenate((x, interaction), axis = 1)
+lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
+rslt = lr.fit()
+rslt.summary()
+# Test model 8 for multicollinearity
+feats12 = [feats[0]] + [feats[4]] + feats[6:8] + ['stops_policy_inter', 'sqf_arrest_inter'] 
+vif = [variance_inflation_factor(x, i) for i in range(x.shape[1])]
+list(zip(feats8, vif))
