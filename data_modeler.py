@@ -33,18 +33,19 @@ def load_split(X, y, **kwargs):
 
 def run_ols_no_split(data, x_vars, y_var):
     """run OLS regression with split already done"""
+    if not isinstance(x_vars, list):
+        x_vars = [x_vars]
     y = data[y_var]
-    X = data[[x_vars]]
+    X = data[x_vars]
     train = X.join(y)
-    if isinstance(x_vars, list):
-        formula = f'{y_var} ~ {"+".join(x_vars)}'
-    else:
-        formula = f'{y_var} ~ {x_vars}'
+    formula = f'{y_var} ~ {"+".join(x_vars)}'
     lr = ols(formula=formula, data=train)
     return lr.fit()
 
 def run_ols(data, x_vars, y_var):
     """Run OLS regression on data"""
+    if not isinstance(x_vars, list):
+        x_vars = [x_vars]
     y = data[y_var]
     X = data[x_vars]
     split = load_split(X, y, test_size = 0.2)
