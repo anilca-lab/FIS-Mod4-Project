@@ -1,6 +1,7 @@
 from statsmodels.formula.api import ols
 from sklearn.model_selection import train_test_split
 import pandas as pd
+import numpy as np
 
 def load_dataframe(datafile='data/df.csv'):
     """load dataframe from file"""
@@ -24,6 +25,10 @@ def engineer_features(data):
     # (because they have low residential population).
     # drop the outlier precincts, Central Park and Midtown South.
     data = data[~data.pct.isin([22, 14])]
+    # the data is skewed. Generate log columns
+    log_cols = ['crimerate', 'nonstop_arrestrate', 'stoprate', 'stop_arrestrate', 'arrestrate',
+                'nonstop_arrests', 'arrests', 'population', 'stops', 'stop_arrests', 'cmplnts']
+    data[[f'log_{col}' for col in log_cols]] = data[log_cols].apply(np.log).copy()
     return data
 
 def load_split(X, y, **kwargs):
