@@ -69,10 +69,6 @@ x = np.concatenate((X_train[:,3:5], X_train[:,6].reshape(-1,1)), axis = 1)
 lr = sm.OLS(y_train[:,1], sm.add_constant(x), hasconst=True)
 rslt = lr.fit()
 rslt.summary()
-# Test model 7 for multicollinearity
-feats7 = feats[3:5] + [feats[6]]
-vif = [variance_inflation_factor(x, i) for i in range(x.shape[1])]
-list(zip(feats8, vif))
 # Model 8: rates - stop rate with crime and policy change interaction
 interaction = X_train[:,4]*X_train[:,6]
 x = np.concatenate((x, interaction.reshape(-1,1)), axis = 1)
