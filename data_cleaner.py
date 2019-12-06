@@ -230,6 +230,7 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
         if convert:
             data = convert_17_18_data(data)
         return data
+    
     dtype = {'repcmd' : str,
            'revcmd' : str,
            'stname' : str,
@@ -271,12 +272,12 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
 #    y_n_to_1_0_cols(data)
     return data
 
-def load_sqfs(start=2003, end=2016, dirname='../data/stop_frisk'):
+def load_sqfs(start=2003, end=2018, dirname='../data/stop_frisk'):
     """Loads sqf data in format dir/<year>.csv into dict of dataframes
     Currently works for years in 2003 to 2016"""
     stop_frisks = {}
     for year in range(start, end + 1):
-        stop_frisks[year] = load_sqf(dirname, year)
+        stop_frisks[year] = load_sqf(year, dirname)
     print("Done.")
     return stop_frisks
 
@@ -306,6 +307,37 @@ def concat_dict_of_dfs(df_dict):
     """when we want to concatenate the years"""
     return pd.concat(df_dict.values(), sort=False, ignore_index=True)
 
+
+
+def complaints_data(dirname='../data'):
+    """clean complaints data"""
+    complaints_df = pd.read_csv(f'{dirname}/NYPD_Complaint_Data_Historic.csv', 
+                                dtype={'CMPLNT_NUM' : 'Int64'},
+                                na_values=['  "error" : true', 
+                                           '  "message" : "Internal error"',
+                                           '  "status" : 500',
+                                           '}'],
+                                parse_dates=['RPT_DT'])
+
+    complaints_df = complaints_df.dropna(subset = ['CMPLNT_NUM', 
+                                                   'RPT_DT', 
+                                                   'ADDR_PCT_CD', 
+                                                   'KY_CD', 
+                                                   'LAW_CAT_CD'])
+    complaints_df = complaints_df.rename({'ADDR_PCT_CD' : 'pct'})
+    return complaints_df
+
+USE_ARREST_COLS = ['ARREST_DATE', 'ARREST_PRECINCT','KY_CD','LAW_CAT_CD','AGE_GROUP', 'PERP_RACE', 'PERP_SEX', 'Latitude', 'Longitude']
+
+def arrests_data(dirname='../data'):
+    """clean arrests data"""
+    arrests_df = pd.read_csv(f'{dirname}/NYPD_Arrests_Data__Historic_.csv',
+                             parse_dates=['ARREST_DATE'])
+    arrests_df = arrests_df.replace({'LAW_CAT_CD': 
+                                     {'V':'VIOLATION', 
+                                      'M': 'MISDEMEANOR', 
+                                      'F': 'FELONY'}})
+    arrests_df = arrests_df.rename({'ARREST_PRECINCT' : 'pct'})
 def aggregate_data(data):
     """Generate datafile aggregated by year and precinct"""
     export_cols = ['year','pct','population','arrests','']
