@@ -1,5 +1,5 @@
 # FIS-Mod4-Project
-This project examines the relationship between crime rate and the stop-question-frisk policy change in NYC.
+This project examines the relationship between the overall effectiveness of the police and the stop-question-frisk policy change in NYC.
 
 Date: December 2019
 
