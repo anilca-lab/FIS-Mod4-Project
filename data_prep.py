@@ -9,10 +9,10 @@ Data were initially processed using R. The following merges the aggregated data
 and engineers new features.
 """
 import pandas as pd
-population_df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/population_df.csv')
-complaints_df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/complaints_df.csv')
-arrests_df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/arrests_df.csv')
-sqf_df = pd.read_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/sqf_df.csv')
+population_df = pd.read_csv('data/population_df.csv')
+complaints_df = pd.read_csv('data/complaints_df.csv')
+arrests_df = pd.read_csv('data/arrests_df.csv')
+sqf_df = pd.read_csv('data/sqf_df.csv')
 complaints_df = complaints_df.groupby(['YEAR', 'ADDR_PCT_CD']).CMPLNTS.sum()
 complaints_df = complaints_df.reset_index()
 # merge complaints and population data by precinct (assume same population every year)
@@ -55,4 +55,4 @@ df['arrest_rate'] = 1000* df.ARRESTS / df.POPULATION
 df['sqf_arrest_rate'] = 1000 * df.STOP_ARRESTS / df.POPULATION
 df['stop_rate'] = 1000 * df.STOPS / df.POPULATION
 # export the dataframe
-df.to_csv('/Users/flatironschol/FIS-Projects/Module4/FIS-Mod4-Project/data/df.csv')
+df.to_csv('data/df.csv')
