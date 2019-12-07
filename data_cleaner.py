@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 
-NA_VALUES = [' ', '12311900', '*', '**', '(nul' ,'(n', '(', '(nu']
+NA_VALUES = (' ', '12311900', '*', '**', '(nul' ,'(n', '(', '(nu')
 Y_N_COLS = ('arstmade', 'pistol', 'machgun', 'asltweap',
             'riflshot', 'knifcuti', 'othrweap', 'wepfound',
             'cs_lkout', 'cs_objcs', 'cs_casng', 'cs_cloth', 'cs_descr',
@@ -18,24 +18,39 @@ Y_N_COLS = ('arstmade', 'pistol', 'machgun', 'asltweap',
             'rf_furt', 'rf_bulg', 'rf_vcrim', 'rf_vcact', 'rf_verbl', 'rf_othsw', 'rf_attir', 'rf_knowl',
             'pf_hands', 'pf_wall', 'pf_grnd', 'pf_drwep', 'pf_ptwep', 'pf_baton', 'pf_hcuff',
             'pf_pepsp', 'pf_other', 'radio', 'rf_rfcmp',
-            'othpers', 'explnstp', 'offunif', 'frisked', 'searched', 'contrabn', 'adtlrept')
+            'othpers', 'explnstp', 'offunif', 'frisked', 'searched', 'contrabn', 'adtlrept',
+            'sumissue', )
 
 CAT_COLS =  ('city',
-           'sector',
-           'post',      # ignorable column
-           'dettypcm',  # ignorable column
-           'officrid',
-           'rescode',
-           'offverb',
-           'offshld',
-           'forceuse',
-           'sex',
-           'race',
-           'haircolr',
-           'eyecolor',
-           'build')
+             'sector',
+             'post',      # ignorable column
+             'dettypcm',  
+             'officrid',
+             'rescode',
+             'offverb',
+             'offshld',
+             'forceuse',
+             'sex',
+             'race',
+             'haircolr',
+             'eyecolor',
+             'build',
+             'typeofid',
+             'recstat',
+             'inout',
+             'trhsloc',
+             'addrtyp',
+             'month',
+             'day')
 
-UNMATCHED_2017_COLS = ['ISSUING_OFFICER_RANK',
+REMOVE_COLS = ('detail1_', 
+               'linecm', 
+               'post', 
+               'comppct',
+               'compyear',
+               'state')
+
+UNMATCHED_2017_COLS = ('ISSUING_OFFICER_RANK',
  'SUPERVISING_OFFICER_RANK',
  'JURISDICTION_DESCRIPTION',
  'OFFICER_NOT_EXPLAINED_STOP_DESCRIPTION',
@@ -52,7 +67,7 @@ UNMATCHED_2017_COLS = ['ISSUING_OFFICER_RANK',
  'FIREARM_FLAG',
  'PHYSICAL_FORCE_DRAW_POINT_FIREARM_FLAG',
  'PHYSICAL_FORCE_RESTRAINT_USED_FLAG',
- 'STOP_LOCATION_FULL_ADDRESS']
+ 'STOP_LOCATION_FULL_ADDRESS')
 
 COL_RENAME = {'STOP_FRISK_ID' : 'ser_num',
  'STOP_FRISK_DATE' : 'datestop',
@@ -160,7 +175,7 @@ def format_time(t_str):
 
 def y_n_to_1_0(col, yes_value='Y', set_na=True):
     """convert Y/N column to 1/0 column. set_na keeps blanks as NaN, if false sets to 0"""
-    out_col = pd.Series(np.where(col.isin([yes_value, '1']), 1, 0), col.index)
+    out_col = pd.Series(np.where(col.isin([yes_value, '1']), 1, 0), col.index).astype('int8')
     if set_na:
         out_col[col.isna()] = np.NaN
     return out_col
@@ -202,6 +217,7 @@ these we'd have to consider adding to the other years as combined columns:
 'STOP_LOCATION_FULL_ADDRESS' : 'addrnum' + 'stname' + 'stinter' + 'crossst'
     """
     data = data.copy().rename(columns=COL_RENAME)
+    
     # convert STOP_WAS_INITIATED
     data['radio'] = data.STOP_WAS_INITIATED.map(lambda x: 'Y' if x=='Based on Radio Run' else 'N')
     data['ac_rept'] = data.STOP_WAS_INITIATED.map(lambda x: 'Y' if x=='Based on C/W on Scene' else 'N')
@@ -213,18 +229,63 @@ these we'd have to consider adding to the other years as combined columns:
     data = height_to_feet_inch(data, 'SUSPECT_HEIGHT')
     
     data = data.replace(REPLACE_DICT)
-    data = data.drop(columns=UNMATCHED_2017_COLS)
+    data = data.drop(columns=list(UNMATCHED_2017_COLS))
+    
+    # this should be in the add_datetimestop function
     data['datetimestop'] = pd.to_datetime(data.datestop \
                                           + ' ' + data.timestop,
                                           errors='coerce')
-    data = data.dropna(subset=['pct'])
+    data = data.drop(columns=['datestop', 'timestop'])
+    
+    # fix column datatypes
+    dtypes = get_dtypes()
+    dtypes = {key : dtypes.get(key) for key in data.columns if dtypes.get(key)}
+    data = data.astype(dtypes, errors='ignore')
+    
     return data
 
+def load_full_sqf(dirname='../data/stop_frisk'):
+    """Load the cleaned 2003-2018 dataframe"""
+    return pd.read_pickle(f'{dirname}/stop_frisks.pkl')
+
+def get_dtypes(on_input=True):
+    """Return full dict of dtypes, for on_input or output."""
+    dtypes = {'repcmd' : str,
+              'revcmd' : str,
+              'stname' : str,
+              'datestop' : str,
+              'timestop' : str,
+              'sumoffen' : str,
+              'addrnum' : str,
+              'othfeatr' : str,
+              'recstat' : str,
+              'pct' : 'Int64',
+              'ht_feet' : 'Int64',
+              'ht_inch' : 'Int64',
+              'beat' : 'Int64',
+              'addrpct' : 'Int64',
+              }
+    for col in Y_N_COLS:
+        if on_input:
+            dtypes.update({col : 'category'})
+        else:
+            dtypes.update({col : 'int8'})
+    for col in CAT_COLS:
+        dtypes.update({col : 'category'})
+    if not on_input:
+        for key in REMOVE_COLS + ('datestop', 'timestop'):
+            if key in dtypes:
+                dtypes.pop(key)
+                
+    return dtypes
+        
 def load_sqf(year, dirname='../data/stop_frisk', convert=True):
-    """Load and clean sqf csv file by year."""
+    """Load and clean sqf csv file by year. 
+    convert=True if 2017, 2018 should be converted to pre-2017 format."""
     print(f'Loading {year}...')
     # '*' is a na_value for the beat variable
     # '12311900' is a na_value for DOB
+    
     if year in (2017, 2018):
         data = pd.read_csv(f'{dirname}/{year}.csv',
                            encoding='cp437',
@@ -234,28 +295,11 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                            na_values=NA_VALUES)
         if convert:
             data = convert_17_18_data(data)
-    else:
-        dtype = {'repcmd' : str,
-               'revcmd' : str,
-               'stname' : str,
-               'datestop' : str,
-               'timestop' : str,
-               'sumoffen' : str,
-               'addrnum' : str,
-               'othfeatr' : str,
-               'recstat' : str,
-               'pct' : 'Int64',
-               'ht_feet' : 'Int64',
-               'ht_inch' : 'Int64',
-               }
-        for col in Y_N_COLS:
-            dtype.update({col : 'category'})
-        for col in CAT_COLS:
-            dtype.update({col : 'category'})
+    else:      
         data = pd.read_csv(f'{dirname}/{year}.csv',
                            encoding='cp437',
                            na_values=NA_VALUES,
-                           dtype=dtype)
+                           dtype=get_dtypes())
         # fix 2006 column names
         data = data.rename(columns={'adrnum' : 'addrnum',
                                     'adrpct': 'addrpct',
@@ -267,13 +311,15 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'strname' : 'stname',
                                     'details_' : 'detailcm'})
         # drop some useless columns
-        data = data.drop(columns=['detail1_', 'linecm', 'post'], errors='ignore')
+        data = data.drop(columns=list(REMOVE_COLS), errors='ignore')
         # 999 is a na_value for the precinct variable
         data.pct = data.pct.replace({999: np.nan})
         data = add_datetimestop(data)
     if convert or year < 2017: 
+        data.columns = data.columns.str.lower()
         data = data.dropna(subset=['pct'])
-        # convert yes-no columns to 1-0 ??
+        
+        # convert yes-no columns to 1-0
         y_n_to_1_0_cols(data)
     return data
 
@@ -308,13 +354,27 @@ def load_filespecs(start=2003, end=2017, dirname='../data/stop_frisk/filespecs')
     return {year : pd.read_excel(f'{dirname}/{year} SQF File Spec.xlsx',
                                  header=3) for year in range(start, end + 1)}
 
+def add_all_columns(data):
+    """Make sure dataframe data has all the possible columns with the correct datatypes."""
+    dtypes = get_dtypes(on_input=False)
+    newcols = { col : dtype for col, dtype in dtypes.items() if col not in data}
+    newcols = { col : np.NaN for col in newcols}
+    data = data.assign(**newcols)
+    data = data.fillna({col : 0 for col in Y_N_COLS})
+    data = data.astype(dtypes)
+    return data
+    
 def concat_dict_of_dfs(df_dict):
     """when we want to concatenate the years"""
-    return pd.concat(df_dict.values(), sort=False, ignore_index=True)
+    df_dict = {year : add_all_columns(data) for year, data in df_dict.items()}
+    data = pd.concat(df_dict.values(), sort=False, ignore_index=True)
+    dtypes = get_dtypes(on_input=False)
+    data = data.astype(dtypes)
+    return data
 
 
 def clean_and_save_full_sqfs(dirname='../data/stop_frisk'):
     """Create and save full stop-and-frisks data from raw files"""
     data = concat_dict_of_dfs(load_sqfs(dirname=dirname))
-    data.to_csv(f'{dirname}/stop_frisks.csv', index=False)
+    data.to_pickle(f'{dirname}/stop_frisks.pkl')
     return data
