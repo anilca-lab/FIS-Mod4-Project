@@ -43,7 +43,7 @@ CAT_COLS =  ('city',
              'month',
              'day')
 
-REMOVE_COLS = ('detail1_', 
+IGNORE_COLS = ('detail1_', 
                'linecm', 
                'post', 
                'comppct',
@@ -273,7 +273,7 @@ def get_dtypes(on_input=True):
     for col in CAT_COLS:
         dtypes.update({col : 'category'})
     if not on_input:
-        for key in REMOVE_COLS + ('datestop', 'timestop'):
+        for key in IGNORE_COLS + ('datestop', 'timestop'):
             if key in dtypes:
                 dtypes.pop(key)
                 
@@ -292,7 +292,9 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                            dtype = {'SUSPECT_HEIGHT' : str,
                                     'PHYSICAL_FORCE_OC_SPRAY_USED_FLAG' : 'str',
                                     'PHYSICAL_FORCE_WEAPON_IMPACT_FLAG' : 'str'},
-                           na_values=NA_VALUES)
+                           na_values=NA_VALUES,
+                           use_cols = lambda x : x not in IGNORE_COLS
+                          )
         if convert:
             data = convert_17_18_data(data)
     else:      
@@ -310,8 +312,6 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'strintr' : 'stinter',
                                     'strname' : 'stname',
                                     'details_' : 'detailcm'})
-        # drop some useless columns
-        data = data.drop(columns=list(REMOVE_COLS), errors='ignore')
         # 999 is a na_value for the precinct variable
         data.pct = data.pct.replace({999: np.nan})
         data = add_datetimestop(data)
@@ -366,6 +366,7 @@ def add_all_columns(data):
     
 def concat_dict_of_dfs(df_dict):
     """when we want to concatenate the years"""
+    # we should probably be using merge instead of concat, which is better at handling categorical columns
     df_dict = {year : add_all_columns(data) for year, data in df_dict.items()}
     data = pd.concat(df_dict.values(), sort=False, ignore_index=True)
     dtypes = get_dtypes(on_input=False)
