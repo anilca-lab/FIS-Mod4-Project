@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-@author: climatebrad
+@authors: climatebrad, anilca-lab
 """
 
 import pandas as pd
@@ -57,6 +57,7 @@ UNMATCHED_2017_COLS = ['ISSUING_OFFICER_RANK',
 COL_RENAME = {'STOP_FRISK_ID' : 'ser_num',
  'STOP_FRISK_DATE' : 'datestop',
  'STOP_FRISK_TIME' : 'timestop',
+ 'Stop Frisk Time' : 'timestop',
  'YEAR2' : 'year',
  'MONTH2' : 'month',
  'DAY2' : 'day',
@@ -98,7 +99,7 @@ COL_RENAME = {'STOP_FRISK_ID' : 'ser_num',
  'SEARCH_BASIS_HARD_OBJECT_FLAG' : 'sb_hdobj',
  'SEARCH_BASIS_OTHER_FLAG' : 'sb_other',
  'SEARCH_BASIS_OUTLINE_FLAG' : 'sb_outln',
- 'DEMEANOR_CODE' : 'dettypCM',
+ 'DEMEANOR_CODE' : 'dettypcm',
  'SUSPECT_REPORTED_AGE' : 'age',
  'SUSPECT_SEX' : 'sex',
  'SUSPECT_RACE_DESCRIPTION' : 'race',
@@ -213,7 +214,9 @@ these we'd have to consider adding to the other years as combined columns:
     
     data = data.replace(REPLACE_DICT)
     data = data.drop(columns=UNMATCHED_2017_COLS)
-    data = add_datetimestop(data)
+    data['datetimestop'] = pd.to_datetime(data.datestop \
+                                          + ' ' + data.timestop,
+                                          errors='coerce')
     data = data.dropna(subset=['pct'])
     return data
 
@@ -225,51 +228,53 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
     if year in (2017, 2018):
         data = pd.read_csv(f'{dirname}/{year}.csv',
                            encoding='cp437',
-                           dtype = {'SUSPECT_HEIGHT' : str },
+                           dtype = {'SUSPECT_HEIGHT' : str,
+                                    'PHYSICAL_FORCE_OC_SPRAY_USED_FLAG' : 'str',
+                                    'PHYSICAL_FORCE_WEAPON_IMPACT_FLAG' : 'str'},
                            na_values=NA_VALUES)
         if convert:
             data = convert_17_18_data(data)
-        return data
-    
-    dtype = {'repcmd' : str,
-           'revcmd' : str,
-           'stname' : str,
-           'datestop' : str,
-           'timestop' : str,
-           'sumoffen' : str,
-           'addrnum' : str,
-           'othfeatr' : str,
-           'recstat' : str,
-           'pct' : 'Int64',
-           'ht_feet' : 'Int64',
-           'ht_inch' : 'Int64',
-           }
-    for col in Y_N_COLS:
-        dtype.update({col : 'category'})
-    for col in CAT_COLS:
-        dtype.update({col : 'category'})
-    data = pd.read_csv(f'{dirname}/{year}.csv',
-                       encoding='cp437',
-                       na_values=NA_VALUES,
-                       dtype=dtype)
-    # fix 2006 column names
-    data = data.rename(columns={'adrnum' : 'addrnum',
-                                'adrpct': 'addrpct',
-                                'dettyp_c' : 'dettypcm',
-                                'rescod' : 'rescode',
-                                'premtyp' : 'premtype',
-                                'prenam' : 'premname',
-                                'strintr' : 'stinter',
-                                'strname' : 'stname',
-                                'details_' : 'detailcm'})
-    data = add_datetimestop(data)
-    # drop some useless columns
-    data = data.drop(columns=['detail1_', 'linecm', 'post', 'dettypecm'], errors='ignore')
-    # 999 is a na_value for the precinct variable
-    data.pct = data.pct.replace({999: np.nan})
-    data = data.dropna(subset=['pct'])
-    # convert yes-no columns to 1-0 ??
-#    y_n_to_1_0_cols(data)
+    else:
+        dtype = {'repcmd' : str,
+               'revcmd' : str,
+               'stname' : str,
+               'datestop' : str,
+               'timestop' : str,
+               'sumoffen' : str,
+               'addrnum' : str,
+               'othfeatr' : str,
+               'recstat' : str,
+               'pct' : 'Int64',
+               'ht_feet' : 'Int64',
+               'ht_inch' : 'Int64',
+               }
+        for col in Y_N_COLS:
+            dtype.update({col : 'category'})
+        for col in CAT_COLS:
+            dtype.update({col : 'category'})
+        data = pd.read_csv(f'{dirname}/{year}.csv',
+                           encoding='cp437',
+                           na_values=NA_VALUES,
+                           dtype=dtype)
+        # fix 2006 column names
+        data = data.rename(columns={'adrnum' : 'addrnum',
+                                    'adrpct': 'addrpct',
+                                    'dettyp_c' : 'dettypcm',
+                                    'rescod' : 'rescode',
+                                    'premtyp' : 'premtype',
+                                    'prenam' : 'premname',
+                                    'strintr' : 'stinter',
+                                    'strname' : 'stname',
+                                    'details_' : 'detailcm'})
+        # drop some useless columns
+        data = data.drop(columns=['detail1_', 'linecm', 'post'], errors='ignore')
+        # 999 is a na_value for the precinct variable
+        data.pct = data.pct.replace({999: np.nan})
+        data = add_datetimestop(data)
+    if convert or year < 2017: 
+        data = data.dropna(subset=['pct'])
+        # convert yes-no columns to 1-0 ??
+        y_n_to_1_0_cols(data)
     return data
 
 def load_sqfs(start=2003, end=2018, dirname='../data/stop_frisk'):
@@ -308,37 +313,8 @@ def concat_dict_of_dfs(df_dict):
     return pd.concat(df_dict.values(), sort=False, ignore_index=True)
 
 
-
-def complaints_data(dirname='../data'):
-    """clean complaints data"""
-    complaints_df = pd.read_csv(f'{dirname}/NYPD_Complaint_Data_Historic.csv', 
-                                dtype={'CMPLNT_NUM' : 'Int64'},
-                                na_values=['  "error" : true', 
-                                           '  "message" : "Internal error"',
-                                           '  "status" : 500',
-                                           '}'],
-                                parse_dates=['RPT_DT'])
-
-    complaints_df = complaints_df.dropna(subset = ['CMPLNT_NUM', 
-                                                   'RPT_DT', 
-                                                   'ADDR_PCT_CD', 
-                                                   'KY_CD', 
-                                                   'LAW_CAT_CD'])
-    complaints_df = complaints_df.rename({'ADDR_PCT_CD' : 'pct'})
-    return complaints_df
-
-USE_ARREST_COLS = ['ARREST_DATE', 'ARREST_PRECINCT','KY_CD','LAW_CAT_CD','AGE_GROUP', 'PERP_RACE', 'PERP_SEX', 'Latitude', 'Longitude']
-
-def arrests_data(dirname='../data'):
-    """clean arrests data"""
-    arrests_df = pd.read_csv(f'{dirname}/NYPD_Arrests_Data__Historic_.csv',
-                             parse_dates=['ARREST_DATE'])
-    arrests_df = arrests_df.replace({'LAW_CAT_CD': 
-                                     {'V':'VIOLATION', 
-                                      'M': 'MISDEMEANOR', 
-                                      'F': 'FELONY'}})
-    arrests_df = arrests_df.rename({'ARREST_PRECINCT' : 'pct'})
-def aggregate_data(data):
-    """Generate datafile aggregated by year and precinct"""
-    export_cols = ['year','pct','population','arrests','']
-    return data.groupby(['year','pct']).sum()
+def clean_and_save_full_sqfs(dirname='../data/stop_frisk'):
+    """Create and save full stop-and-frisks data from raw files"""
+    data = concat_dict_of_dfs(load_sqfs(dirname=dirname))
+    data.to_csv(f'{dirname}/stop_frisks.csv', index=False)
+    return data
