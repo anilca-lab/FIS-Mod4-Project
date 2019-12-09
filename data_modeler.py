@@ -3,9 +3,9 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-def load_dataframe(datafile='data/df.csv'):
+def load_dataframe(datafile='data/full_df.csv'):
     """load dataframe from file"""
-    data = pd.read_csv('data/full_df.csv')
+    data = pd.read_csv(datafile)
     data = engineer_features(data)
     return data
 
