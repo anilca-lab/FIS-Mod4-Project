@@ -375,8 +375,8 @@ def concat_dict_of_dfs(df_dict):
     return data
 
 
-def clean_and_save_full_sqfs(dirname='../data/stop_frisk'):
+def clean_and_save_full_sqfs(indirname='../data/stop_frisk', outdirname='../data'):
     """Create and save full stop-and-frisks data from raw files"""
-    data = concat_dict_of_dfs(load_sqfs(dirname=dirname))
-    data.to_pickle(f'{dirname}/full_stop_frisks_df.pkl')
+    data = concat_dict_of_dfs(load_sqfs(dirname=indirname))
+    data.to_pickle(f'{outdirname}/full_stop_frisks_df.pkl')
     return data
