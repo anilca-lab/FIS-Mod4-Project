@@ -27,8 +27,7 @@ Summary of files:
  - data_prep.py: Code used to clean data
  - data_modeler.py: Code used to engineer features and do modeling
  - visualizations.py: Code to produce visualizations
- - training.py: Code for model fitting
- - test.py: Code for model testing
+ - training-testing.py: Code for model fitting and testing
  - Stop-question-frisk.pdf: PDF of slideshow presentation
  - [Slideshow](https://docs.google.com/presentation/d/1qCCb5k9CuM3CH0Y8Wq6eowyCYQgKv3oVReTsgcaw0Ok/)
 
