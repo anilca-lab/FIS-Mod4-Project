@@ -168,8 +168,15 @@ def load_arrests_df(datadir='../data'):
     """load arrests data from the pickle"""
     return load_data_df_from_pickle('arrests', datadir)
 
-def load_stop_frisks_df(datadir='../data/stop_frisk'):
+def load_stop_frisks_df(datadir='../data'):
     return load_data_df_from_pickle('stop_frisks', datadir)
+
+
+def load_datasets(datadir='../data'):
+    return {'stops' : load_stop_frisks_df(datadir),
+            'arrests' : load_arrests_df(datadir),
+            'crimes' : load_complaints_df(datadir),
+            'population' : load_population_df(datadir)}
 
 def create_population_df(datadir='../data'):
     """read and write clean population-by-precinct data csv
@@ -233,11 +240,13 @@ def aggregate_data(stop_frisks, arrests, complaints, population):
                  .merge(population.astype({'pct' : 'int64'}),
                        on=['pct'], how='inner').astype({'year' : 'int64'})
 
-def load_and_aggregate_data():
+    
+def load_and_aggregate_data(indatadir='../data', outdatadir='data'):
     """One-line function to load and aggregate data."""
-    data = aggregate_data(load_stop_frisks_df(),
-                          load_arrests_df(),
-                          load_complaints_df(),
-                          load_population_df())
-    data.to_csv(f'data/full_df.csv', index=False)
+    datasets = load_datasets(indatadir)
+    data = aggregate_data(datasets['stops'],
+                          datasets['arrests'],
+                          datasets['crimes'],
+                          datasets['population'])
+    data.to_csv(f'{outdatadir}/full_df.csv', index=False)
     return data
