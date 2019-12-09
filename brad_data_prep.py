@@ -231,7 +231,7 @@ def aggregate_data(stop_frisks, arrests, complaints, population):
                  .merge(crime_ct.astype({'year' : 'int64', 'pct' : 'int64'}), 
                        on=['year', 'pct'], how='inner') \
                  .merge(population.astype({'pct' : 'int64'}),
-                       on=['pct'], how='inner')
+                       on=['pct'], how='inner').astype({'year' : 'int64'})
 
 def load_and_aggregate_data():
     """One-line function to load and aggregate data."""
