@@ -3,8 +3,10 @@
 """
 @authors: climatebrad, anilca-lab
 """
+import os.path
 import numpy as np
 import pandas as pd
+import data_cleaner as dc
 
 COMPLAINTS_PARAMS = {
     'infilename' : 'NYPD_Complaint_Data_Historic.csv',
@@ -79,6 +81,9 @@ ARRESTS_PARAMS = {
 
 }
     
+    
+# functions to create dataframes from raw data:
+
 def create_df_from_csv(datadir, infilename, outfilename, read_csv_params, **params):
     """
     loads and processes dataframe from csv, saves dataframe to outfilename.
@@ -146,37 +151,7 @@ ABOUT: https://data.cityofnewyork.us/Public-Safety/NYPD-Arrests-Data-Historic-/8
                                       )
     return arrests_df
 
-# TODO: use params to load data df properly
-def load_data_df(filename, datadir='data', parse_dates=['date']):
-    """load dataframe from file named full_{filename}_df.csv"""
-    return pd.read_csv(f'{datadir}/full_{filename}_df.csv',
-                       parse_dates=parse_dates)
 
-def load_population_df(datadir='data'):
-    """load full_population_df.csv into df"""
-    return load_data_df('population', datadir, parse_dates=False)
-
-def load_data_df_from_pickle(filename, datadir='../data'):
-    """load dataframe name full_{filename}_df.pkl from pickle"""
-    return pd.read_pickle(f'{datadir}/full_{filename}_df.pkl')
-
-def load_complaints_df(datadir='../data'):
-    """load complaints data from the pickle"""
-    return load_data_df_from_pickle('complaints', datadir)
-
-def load_arrests_df(datadir='../data'):
-    """load arrests data from the pickle"""
-    return load_data_df_from_pickle('arrests', datadir)
-
-def load_stop_frisks_df(datadir='../data'):
-    return load_data_df_from_pickle('stop_frisks', datadir)
-
-
-def load_datasets(datadir='../data'):
-    return {'stops' : load_stop_frisks_df(datadir),
-            'arrests' : load_arrests_df(datadir),
-            'crimes' : load_complaints_df(datadir),
-            'population' : load_population_df(datadir)}
 
 def create_population_df(datadir='../data'):
     """read and write clean population-by-precinct data csv
@@ -198,8 +173,66 @@ ABOUT: https://johnkeefe.net/nyc-police-precinct-and-census-data
                                                            'Longitude':'mean',
                                                            'population':'sum'}).reset_index()
     population_df = population_df.rename(columns={'precinct' : 'pct'})
-    population_df.to_csv(f'data/full_population_df.csv', index=False)
+    population_df.to_csv(f'{datadir}/full_population_df.csv', index=False)
     return population_df
+
+
+# Load dataframes from existing files:
+
+def exists_datafile(filename, datadir='../data', suffix='pkl'):
+    """check if dataframe pickle already exists"""
+    return os.path.exists(f'{datadir}/full_{filename}_df.{suffix}')
+
+def load_data_df(filename, datadir='../data', parse_dates=['date']):
+    """load dataframe from file named full_{filename}_df.csv"""
+    return pd.read_csv(f'{datadir}/full_{filename}_df.csv',
+                       parse_dates=parse_dates)
+
+def load_data_df_from_pickle(filename, datadir='../data'):
+    """load dataframe name full_{filename}_df.pkl from pickle"""
+    return pd.read_pickle(f'{datadir}/full_{filename}_df.pkl')
+
+# Load specific datafiles:
+
+def load_population_df(datadir='../data', create=True):
+    """load full_population_df.csv into df
+Default create=True creates datafile if needed."""
+    if create and (not exists_datafile('population', datadir, 'csv')):
+        return create_population_df(datadir)
+    return load_data_df('population', datadir, parse_dates=False)
+
+
+def load_complaints_df(datadir='../data', create=True):
+    """load complaints data from the pickle
+Default create=True creates datafile if needed."""
+    if create and (not exists_datafile('complaints', datadir)):
+        return create_complaints_df(datadir)
+    return load_data_df_from_pickle('complaints', datadir)
+
+def load_arrests_df(datadir='../data', create=True):
+    """load arrests data from the pickle
+Default create=True creates datafile if needed."""
+    if create and (not exists_datafile('arrests', datadir)):
+        return create_arrests_df(datadir)
+    return load_data_df_from_pickle('arrests', datadir)
+
+def load_stop_frisks_df(datadir='../data', create=True):
+    """load stop_frisks_df from the pickle
+Default create=True creates datafile if needed."""
+    if create and (not exists_datafile('stop_frisks', datadir)):
+        return dc.clean_and_save_full_sqfs(f'{datadir}/stop_frisk', datadir)
+    return load_data_df_from_pickle('stop_frisks', datadir)
+
+
+def load_datasets(datadir='../data', create=True):
+    """Load full data sets from stored pickles/csv. 
+If create=True then create datafiles if needed."""
+    return {'stops' : load_stop_frisks_df(datadir, create),
+            'arrests' : load_arrests_df(datadir, create),
+            'crimes' : load_complaints_df(datadir, create),
+            'population' : load_population_df(datadir, create)}
+
+# Aggregate data functions:
 
 def aggregate_stop_frisks(stop_frisks):
     """Return stops and stop-arrest count by year and precinct."""
@@ -226,8 +259,6 @@ def aggregate_complaints(complaints):
     return count_by_year_and_pct(complaints, 'crimes')
 
 
-
-# TODO: concatenate results into one df
 def aggregate_data(stop_frisks, arrests, complaints, population):
     """create aggregate df"""
     stop_ct = aggregate_stop_frisks(stop_frisks)
@@ -241,12 +272,16 @@ def aggregate_data(stop_frisks, arrests, complaints, population):
                        on=['pct'], how='inner').astype({'year' : 'int64'})
 
     
-def load_and_aggregate_data(indatadir='../data', outdatadir='data'):
-    """One-line function to load and aggregate data."""
-    datasets = load_datasets(indatadir)
+def load_and_aggregate_data(indatadir='../data', outdatadir='data', create=True):
+    """One-line function to load and aggregate data.
+Default create=True creates datafiles where needed."""
+    datasets = load_datasets(indatadir, create)
     data = aggregate_data(datasets['stops'],
                           datasets['arrests'],
                           datasets['crimes'],
                           datasets['population'])
     data.to_csv(f'{outdatadir}/full_df.csv', index=False)
     return data
+
+if __name__ == "__main__":
+    df = load_and_aggregate_data()
