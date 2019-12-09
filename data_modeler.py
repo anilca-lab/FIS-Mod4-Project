@@ -1,33 +1,40 @@
+"""
+@authors: climatebrad, anilca-lab
+"""
+import os.path
 from statsmodels.formula.api import ols
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-def load_dataframe(datafile='data/df.csv'):
-    """load dataframe from file"""
-    data = pd.read_csv('data/df.csv').dropna()
-    data.columns = data.columns.str.lower()
-    data = data.rename(columns={'addr_pct_cd' : 'pct'})
-    data = engineer_features(data)
+
+def load_dataframe(datafile='data/full_df.csv', outfile='data/df.csv', create=True, force=False):
+    """load dataframe from file. Set force=True to force recreation of df.csv file"""
+    if force or (create and (not os.path.exists(outfile))):
+        data = pd.read_csv(datafile)
+        data = engineer_features(data)
+        data.to_csv(outfile, index=False)
+    else:
+        data = pd.read_csv(outfile)
     return data
 
 def engineer_features(data):
     """add features to dataframe"""
     data['policy'] = (data.year < 2013).mul(1)
     data['nonstop_arrests'] = data.arrests - data.stop_arrests
-    data['crimerate'] = data.cmplnts / data.population * 1000
+    data['crimerate'] = data.crimes / data.population * 1000
     data['nonstop_arrestrate'] = data.nonstop_arrests / data.population * 1000
     data['stoprate'] = data.stops / data.population * 1000
     data['stop_arrestrate'] = data.stop_arrests / data.population * 1000
     data['arrestrate'] = data.arrests / data.population * 1000
-    data['normal_year'] = data.year - 2007
+    data['normal_year'] = data.year - 2005
     # Two of the precincts (22 in particular) have outlier crime rates
     # (because they have low residential population).
     # drop the outlier precincts, Central Park and Midtown South.
     data = data[~data.pct.isin([22, 14])]
     # the data is skewed. Generate log columns
     log_cols = ['crimerate', 'nonstop_arrestrate', 'stoprate', 'stop_arrestrate', 'arrestrate',
-                'nonstop_arrests', 'arrests', 'population', 'stops', 'stop_arrests', 'cmplnts']
+                'nonstop_arrests', 'arrests', 'population', 'stops', 'stop_arrests', 'crimes']
     data[[f'log_{col}' for col in log_cols]] = data[log_cols].apply(np.log).copy()
     return data
 
@@ -60,3 +67,6 @@ def run_ols(data, x_vars, y_var):
     rslt = lr.fit()
     return {'result' : rslt,
             'data' : split }
+
+if __name__ == "__main__":
+    df = load_dataframe()
