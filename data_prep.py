@@ -181,7 +181,8 @@ ABOUT: https://johnkeefe.net/nyc-police-precinct-and-census-data
 
 def exists_datafile(filename, datadir='../data', suffix='pkl'):
     """check if dataframe pickle already exists"""
-    return os.path.exists(f'{datadir}/full_{filename}_df.{suffix}')
+    full_filename = '_'.join(filter(None,['full', filename,'df']))
+    return os.path.exists(f'{datadir}/{full_filename}.{suffix}')
 
 def load_data_df(filename, datadir='../data', parse_dates=['date']):
     """load dataframe from file named full_{filename}_df.csv"""
@@ -283,5 +284,12 @@ Default create=True creates datafiles where needed."""
     data.to_csv(f'{outdatadir}/full_df.csv', index=False)
     return data
 
+def load_aggregated_data(datadir='data', create=True, indatadir='../data'):
+    """One-line function to load the aggregated data. 
+Default create=True creates datafiles where needed."""
+    if create and (not exists_datafile(filename=None, datadir=datadir, suffix='csv')):
+        return load_and_aggregate_data(indatadir=indatadir, outdatadir=datadir, create=True)
+    return pd.read_csv(f'{datadir}/full_df.csv')
+                             
 if __name__ == "__main__":
-    df = load_and_aggregate_data()
+    df = load_aggregated_data()

@@ -1,13 +1,21 @@
+"""
+@authors: climatebrad, anilca-lab
+"""
+import os.path
 from statsmodels.formula.api import ols
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-def load_dataframe(datafile='data/full_df.csv', outfile='data/df.csv'):
-    """load dataframe from file"""
-    data = pd.read_csv(datafile)
-    data = engineer_features(data)
-    data.to_csv(outfile, index=False)
+
+def load_dataframe(datafile='data/full_df.csv', outfile='data/df.csv', create=True, force=False):
+    """load dataframe from file. Set force=True to force recreation of df.csv file"""
+    if force or (create and (not os.path.exists(outfile))):
+        data = pd.read_csv(datafile)
+        data = engineer_features(data)
+        data.to_csv(outfile, index=False)
+    else:
+        data = pd.read_csv(outfile)
     return data
 
 def engineer_features(data):
@@ -59,3 +67,6 @@ def run_ols(data, x_vars, y_var):
     rslt = lr.fit()
     return {'result' : rslt,
             'data' : split }
+
+if __name__ == "__main__":
+    df = load_dataframe()
