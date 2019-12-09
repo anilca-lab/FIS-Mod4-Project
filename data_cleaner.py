@@ -264,6 +264,7 @@ def get_dtypes(on_input=True):
               'ht_inch' : 'Int64',
               'beat' : 'Int64',
               'addrpct' : 'Int64',
+              'year' : 'Int64'
               }
     for col in Y_N_COLS:
         if on_input:
@@ -293,7 +294,7 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'PHYSICAL_FORCE_OC_SPRAY_USED_FLAG' : 'str',
                                     'PHYSICAL_FORCE_WEAPON_IMPACT_FLAG' : 'str'},
                            na_values=NA_VALUES,
-                           use_cols = lambda x : x not in IGNORE_COLS
+                           usecols = lambda x : x not in IGNORE_COLS
                           )
         if convert:
             data = convert_17_18_data(data)
@@ -313,9 +314,9 @@ def load_sqf(year, dirname='../data/stop_frisk', convert=True):
                                     'strname' : 'stname',
                                     'details_' : 'detailcm'})
         # 999 is a na_value for the precinct variable
-        data.pct = data.pct.replace({999: np.nan})
         data = add_datetimestop(data)
     if convert or year < 2017: 
+        data.pct = data.pct.replace({999: np.nan, 208760: np.nan})
         data.columns = data.columns.str.lower()
         data = data.dropna(subset=['pct'])
         
@@ -377,5 +378,5 @@ def concat_dict_of_dfs(df_dict):
 def clean_and_save_full_sqfs(dirname='../data/stop_frisk'):
     """Create and save full stop-and-frisks data from raw files"""
     data = concat_dict_of_dfs(load_sqfs(dirname=dirname))
-    data.to_pickle(f'{dirname}/stop_frisks.pkl')
+    data.to_pickle(f'{dirname}/full_stop_frisks_df.pkl')
     return data
