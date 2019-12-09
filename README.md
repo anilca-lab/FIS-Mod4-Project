@@ -5,7 +5,7 @@ Date: December 2019
 
 Project Members: Brad Johnson and Anil Onal
 
-Goals: To come up with the model specification appropriate to examine the proposed relationship, collect the necassary data, and train and test the model.
+Goals: To come up with the model specification appropriate to examine the proposed relationship, collect the necessary data, and train and test the model.
 
 Responsibilities:
  - Define project scope and focus
@@ -33,8 +33,9 @@ Summary of files:
      - [John Keefe: NYC precinct population data for 2010](https://johnkeefe.net/nyc-police-precinct-and-census-data) 
     [download CSV](https://github.com/pinnnnnn/MAP_Spring_2016/blob/master/NYC_Blocks_2010CensusData_Plus_Precincts.csv)
  - data_prep.py: Code used to clean data
+ - data_modeler.py: Code used to engineer features and do modeling
  - visualizations.py: Code to produce visualizations
  - training.py: Code for model fitting
  - test.py: Code for model testing
- - Stop-question-frisk.pdf: PDF of powerpoint presentation
- - Powerpoint file: https://docs.google.com/presentation/d/1qCCb5k9CuM3CH0Y8Wq6eowyCYQgKv3oVReTsgcaw0Ok/edit#slide=id.gc6f75fceb_0_0
+ - Stop-question-frisk.pdf: PDF of slideshow presentation
+ - [Slideshow](https://docs.google.com/presentation/d/1qCCb5k9CuM3CH0Y8Wq6eowyCYQgKv3oVReTsgcaw0Ok/)
