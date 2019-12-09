@@ -3,10 +3,11 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-def load_dataframe(datafile='data/full_df.csv'):
+def load_dataframe(datafile='data/full_df.csv', outfile='data/df.csv'):
     """load dataframe from file"""
     data = pd.read_csv(datafile)
     data = engineer_features(data)
+    data.to_csv(outfile, index=False)
     return data
 
 def engineer_features(data):
