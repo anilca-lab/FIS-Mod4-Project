@@ -19,7 +19,7 @@ Responsibilities:
  - Lint/clean code file
       
 Summary of files:
- - Master_Notebook.ipynb: Jupyter Notebook documenting the code and the analysis for the project. Written for a technical audience
+ - [Master_Notebook.ipynb](Master_Notebook.ipynb): Jupyter Notebook documenting the code and the analysis for the project. Written for a technical audience
  - data files:
      - df.csv: reported offenses, arrests, stops, and population aggregated annually and at the precinct level
      - borough_df.csv: borough and precinct data
