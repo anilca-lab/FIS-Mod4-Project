@@ -2,7 +2,7 @@
 """
 @authors: climatebrad, anilca-lab
 """
-
+import os.path
 import pandas as pd
 import numpy as np
 
@@ -244,9 +244,6 @@ these we'd have to consider adding to the other years as combined columns:
     
     return data
 
-def load_full_sqf(dirname='../data/stop_frisk'):
-    """Load the cleaned 2003-2018 dataframe"""
-    return pd.read_pickle(f'{dirname}/stop_frisks.pkl')
 
 def get_dtypes(on_input=True):
     """Return full dict of dtypes, for on_input or output."""
@@ -380,3 +377,11 @@ def clean_and_save_full_sqfs(indirname='../data/stop_frisk', outdirname='../data
     data = concat_dict_of_dfs(load_sqfs(dirname=indirname))
     data.to_pickle(f'{outdirname}/full_stop_frisks_df.pkl')
     return data
+
+
+def load_full_sqf(dirname='../data/', create=True):
+    """Load the cleaned 2003-2018 dataframe"""
+    if create and (not os.path.exists(f'{dirname}/full_stop_frisks_df.pkl')):
+        data = clean_and_save_full_sqfs(indirname=f'{dirname}/stop_frisk', outdirname=dirname)
+        return data
+    return pd.read_pickle(f'{dirname}/full_stop_frisks_df.pkl')
