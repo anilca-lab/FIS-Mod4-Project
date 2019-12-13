@@ -382,5 +382,6 @@ def clean_and_save_full_sqfs(indirname='../data/stop_frisk', outdirname='../data
 def load_full_sqf(dirname='../data/', create=True):
     """Load the cleaned 2003-2018 dataframe"""
     if create and (not os.path.exists(f'{dirname}/full_stop_frisks_df.pkl')):
-        clean_and_save_full_sqfs(indirname=f'{dirname}/stop_frisk', outdirname=dirname)
+        data = clean_and_save_full_sqfs(indirname=f'{dirname}/stop_frisk', outdirname=dirname)
+        return data
     return pd.read_pickle(f'{dirname}/full_stop_frisks_df.pkl')
